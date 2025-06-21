@@ -1,0 +1,8 @@
+# Build output
+build/
+
+# IntelliJ files
+.idea/
+
+# Deploy
+deploy.ps1
