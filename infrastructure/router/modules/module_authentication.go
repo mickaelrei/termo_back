@@ -2,6 +2,7 @@ package modules
 
 import (
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"termo_back_end/infrastructure/router"
 )
@@ -59,6 +60,8 @@ func (m *moduleAuthentication) sessionMiddleware(next http.Handler) http.Handler
 
 func (m *moduleAuthentication) login(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement login
+	log.Printf("login endpoint requested")
+
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("Login"))
 }

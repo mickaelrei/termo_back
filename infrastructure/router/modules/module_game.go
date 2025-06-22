@@ -2,6 +2,7 @@ package modules
 
 import (
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"termo_back_end/infrastructure/router"
 )
@@ -45,6 +46,8 @@ func (m moduleGame) Setup(r *mux.Router) ([]router.RouteDefinition, *mux.Router)
 
 func (m moduleGame) start(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Implement game start
+	log.Printf("login endpoint requested")
+
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("Start game"))
 }
