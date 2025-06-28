@@ -1,11 +1,13 @@
 ﻿# === CONFIGURATION ===
-$GoMainFile = "main.go"
-$buildPath = "build"
-$BinaryName = "backend"
 $RemoteUser = "ubuntu"
 $RemoteHost = "your-host-here"
-$RemotePath = "/tmp/backend"
 $SSHKeyPath = "path\to\ssh\key"
+$RemotePath = "/tmp/backend"
+
+$BinaryName = "main"
+$GoMainFile = "main.go"
+$BuildDir = "build"
+$BuildPath = "$BuildDir\backend"
 
 function Write-Color {
     param (
@@ -24,32 +26,25 @@ Set-Location $ScriptDir
 
 # Clean and prepare build directory
 Write-Color "🧹  Cleaning build directory..." DarkYellow
-
-if (!(Test-Path $buildPath)) {
-    New-Item -ItemType Directory -Path $buildPath | Out-Null
-} else {
-    Get-ChildItem -Path $buildPath -Recurse -Force |
-        ForEach-Object {
-            try {
-                Remove-Item -Path $_.FullName -Force -Recurse -ErrorAction Stop
-            } catch {}
-        }
-}
+Remove-Item -Recurse -Force $BuildPath
 
 # Build Go binary for Linux
 Write-Color "⚙️  Building Linux AMD64 Go binary..." Cyan
 $env:GOOS = "linux"
 $env:GOARCH = "amd64"
-go build -o "$buildPath\$BinaryName" $GoMainFile
+go build -o "$BuildPath\$BinaryName" $GoMainFile
 
-if (!(Test-Path "$buildPath\$BinaryName")) {
+if (!(Test-Path "$BuildPath\$BinaryName")) {
     Write-Color "❌  Build failed. Aborting." Red
     exit 1
 }
 
-# Upload binary to server
-Write-Color "📤  Uploading binary to remote server..." Yellow
-$scpCmd = "scp -i `"$SSHKeyPath`" `"$buildPath\$BinaryName`" $RemoteUser@${RemoteHost}:`"$RemotePath`""
+# Copy config.json into the build path
+Copy-Item "config.json" "$BuildPath\" -Force
+
+# Upload folder to remote server
+Write-Color "📤  Uploading backend folder to remote server..." Yellow
+$scpCmd = "scp -i `"$SSHKeyPath`" -r `"$BuildPath\*`" $RemoteUser@${RemoteHost}:`"$RemotePath`""
 Invoke-Expression $scpCmd
 
 # Run remote restart script

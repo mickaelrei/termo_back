@@ -4,5 +4,6 @@ build/
 # IntelliJ files
 .idea/
 
-# Deploy
+# Deploy and configs
 deploy.ps1
+config.json
