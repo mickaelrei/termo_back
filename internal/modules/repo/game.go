@@ -1,4 +1,4 @@
-package module_game
+package repo
 
 import (
 	"context"
@@ -10,28 +10,31 @@ import (
 	"termo_back_end/internal/util"
 )
 
-type Repository interface {
+type GameRepository interface {
 	// StartGame attempts to register a new game in the database for the provided user
 	StartGame(ctx context.Context, userID int64, words []string) error
 
 	// RegisterAttempt attempts to register an attempt on the provided game
-	RegisterAttempt(ctx context.Context, gameID int64, attempt string, finish bool) error
+	RegisterAttempt(ctx context.Context, gameID int64, attempt string, idx uint32, finish bool) error
+
+	// FinishGame marks a game as finished/inactive
+	FinishGame(ctx context.Context, gameID int64) error
 
 	// GetUserActiveGame attempts to find the provided user's active game; returns nil if no active game
 	GetUserActiveGame(ctx context.Context, userID int64) (*entities.Game, error)
 }
 
-type repo struct {
+type gameRepo struct {
 	db *sql.DB
 }
 
-func NewRepo(db *sql.DB) Repository {
-	return repo{
+func NewGameRepo(db *sql.DB) GameRepository {
+	return gameRepo{
 		db: db,
 	}
 }
 
-func (r repo) StartGame(ctx context.Context, userID int64, words []string) error {
+func (r gameRepo) StartGame(ctx context.Context, userID int64, words []string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("[BeginTx] | %v", err)
@@ -58,20 +61,18 @@ func (r repo) StartGame(ctx context.Context, userID int64, words []string) error
 		placeholders []string
 		args         []any
 	)
-	for _, word := range words {
-		placeholders = append(placeholders, "(?, ?)")
-		args = append(args, gameID, word)
+	for i, word := range words {
+		placeholders = append(placeholders, "(?, ?, ?)")
+		args = append(args, gameID, word, i)
 	}
 
 	queryWord := `
 	INSERT INTO game_word (
 		id_game,
-		word
+		word,
+		idx
 	) VALUES
 	` + strings.Join(placeholders, ",\n")
-
-	fmt.Printf("[queryWord] | %v\n", queryWord)
-	fmt.Printf("[args] | %v\n", args)
 
 	_, err = tx.ExecContext(ctx, queryWord, args...)
 	if err != nil {
@@ -86,7 +87,13 @@ func (r repo) StartGame(ctx context.Context, userID int64, words []string) error
 	return nil
 }
 
-func (r repo) RegisterAttempt(ctx context.Context, gameID int64, attempt string, finish bool) error {
+func (r gameRepo) RegisterAttempt(
+	ctx context.Context,
+	gameID int64,
+	attempt string,
+	idx uint32,
+	finish bool,
+) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("[BeginTx] | %v", err)
@@ -97,11 +104,12 @@ func (r repo) RegisterAttempt(ctx context.Context, gameID int64, attempt string,
 	queryAttempt := `
 	INSERT INTO game_attempt (
 		id_game,
-		attempt
-	) VALUES (?, ?)
+		attempt,
+		idx
+	) VALUES (?, ?, ?)
 	`
 
-	_, err = tx.ExecContext(ctx, queryAttempt, gameID, attempt)
+	_, err = tx.ExecContext(ctx, queryAttempt, gameID, attempt, idx)
 	if err != nil {
 		return fmt.Errorf("[ExecContext] | %v", err)
 	}
@@ -128,7 +136,22 @@ func (r repo) RegisterAttempt(ctx context.Context, gameID int64, attempt string,
 	return nil
 }
 
-func (r repo) GetUserActiveGame(ctx context.Context, userID int64) (*entities.Game, error) {
+func (r gameRepo) FinishGame(ctx context.Context, gameID int64) error {
+	query := `
+	UPDATE game
+	SET is_active = FALSE
+	WHERE id = ?
+	`
+
+	_, err := r.db.ExecContext(ctx, query, gameID)
+	if err != nil {
+		return fmt.Errorf("[ExecContext] | %v", err)
+	}
+
+	return nil
+}
+
+func (r gameRepo) GetUserActiveGame(ctx context.Context, userID int64) (*entities.Game, error) {
 	query := `
 	SELECT id
 	FROM game
@@ -159,11 +182,12 @@ func (r repo) GetUserActiveGame(ctx context.Context, userID int64) (*entities.Ga
 	return &game, nil
 }
 
-func (r repo) getGameWords(ctx context.Context, gameID int64) ([]string, error) {
+func (r gameRepo) getGameWords(ctx context.Context, gameID int64) ([]string, error) {
 	query := `
 	SELECT word
 	FROM game_word
 	WHERE id_game = ?
+	ORDER BY idx 
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, gameID)
@@ -186,11 +210,12 @@ func (r repo) getGameWords(ctx context.Context, gameID int64) ([]string, error) 
 	return words, nil
 }
 
-func (r repo) getGameAttempts(ctx context.Context, gameID int64) ([]string, error) {
+func (r gameRepo) getGameAttempts(ctx context.Context, gameID int64) ([]string, error) {
 	query := `
 	SELECT attempt
 	FROM game_attempt
 	WHERE id_game = ?
+	ORDER BY idx
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, gameID)

@@ -1,4 +1,4 @@
-package module_user
+package service
 
 import (
 	"context"
@@ -6,12 +6,13 @@ import (
 	"log"
 	"strings"
 	"termo_back_end/internal/entities"
+	"termo_back_end/internal/modules/repo"
 	"termo_back_end/internal/rules"
 	"termo_back_end/internal/status_codes"
 	"termo_back_end/internal/util"
 )
 
-type Service interface {
+type UserService interface {
 	// UpdateName ensures the new name is valid and then changes it
 	UpdateName(
 		ctx context.Context,
@@ -27,17 +28,17 @@ type Service interface {
 	) (status_codes.UserUpdatePassword, error)
 }
 
-type service struct {
-	repo Repository
+type userService struct {
+	repo repo.UserRepository
 }
 
-func NewService(repo Repository) Service {
-	return service{
+func NewUserService(repo repo.UserRepository) UserService {
+	return userService{
 		repo: repo,
 	}
 }
 
-func (s service) UpdateName(
+func (s userService) UpdateName(
 	ctx context.Context,
 	user *entities.User,
 	newName string,
@@ -57,7 +58,7 @@ func (s service) UpdateName(
 	return status_codes.UserUpdateNameSuccess, nil
 }
 
-func (s service) UpdatePassword(
+func (s userService) UpdatePassword(
 	ctx context.Context,
 	user *entities.User,
 	newPassword string,

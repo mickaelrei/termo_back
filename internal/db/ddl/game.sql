@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS game (
 CREATE TABLE IF NOT EXISTS game_word (
     id_game INTEGER NOT NULL,
     word    TEXT    NOT NULL,
+    idx     INTEGER NOT NULL,
     FOREIGN KEY (id_game) REFERENCES game (id)
 );
 
@@ -18,5 +19,6 @@ CREATE TABLE IF NOT EXISTS game_word (
 CREATE TABLE IF NOT EXISTS game_attempt (
     id_game INTEGER NOT NULL,
     attempt TEXT    NOT NULL,
+    idx     INTEGER NOT NULL,
     FOREIGN KEY (id_game) REFERENCES game (id)
 );

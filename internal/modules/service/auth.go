@@ -1,4 +1,4 @@
-package module_auth
+package service
 
 import (
 	"aidanwoods.dev/go-paseto"
@@ -7,13 +7,13 @@ import (
 	"log"
 	"strings"
 	"termo_back_end/internal/entities"
-	"termo_back_end/internal/modules/module_user"
+	"termo_back_end/internal/modules/repo"
 	"termo_back_end/internal/rules"
 	"termo_back_end/internal/status_codes"
 	"termo_back_end/internal/util"
 )
 
-type Service interface {
+type AuthService interface {
 	// RegisterUser attempts to register a user with the provided credentials
 	//
 	// Returns the auth token string if succeeded
@@ -32,13 +32,13 @@ type Service interface {
 	GetUserFromToken(ctx context.Context, token string) (*entities.User, error)
 }
 
-type service struct {
+type authService struct {
 	publicKey  paseto.V4AsymmetricPublicKey
 	privateKey paseto.V4AsymmetricSecretKey
-	userRepo   module_user.Repository
+	userRepo   repo.UserRepository
 }
 
-func NewService(config entities.Config, userRepo module_user.Repository) Service {
+func NewAuthService(config entities.Config, userRepo repo.UserRepository) AuthService {
 	publicKey, err := paseto.NewV4AsymmetricPublicKeyFromHex(config.Auth.PublicKey)
 	if err != nil {
 		log.Printf("[NewV4AsymmetricPublicKeyFromHex] | %v", err)
@@ -51,14 +51,14 @@ func NewService(config entities.Config, userRepo module_user.Repository) Service
 		panic(err)
 	}
 
-	return service{
+	return authService{
 		publicKey:  publicKey,
 		privateKey: privateKey,
 		userRepo:   userRepo,
 	}
 }
 
-func (s service) RegisterUser(
+func (s authService) RegisterUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (status_codes.UserRegister, string, error) {
@@ -107,7 +107,7 @@ func (s service) RegisterUser(
 	return status_codes.UserRegisterSuccess, token, nil
 }
 
-func (s service) LoginUser(
+func (s authService) LoginUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (status_codes.UserLogin, string, error) {
@@ -140,7 +140,7 @@ func (s service) LoginUser(
 	return status_codes.UserLoginSuccess, token, nil
 }
 
-func (s service) GetUserFromToken(
+func (s authService) GetUserFromToken(
 	ctx context.Context,
 	token string,
 ) (*entities.User, error) {

@@ -1,4 +1,4 @@
-package module_auth
+package module
 
 import (
 	"context"
@@ -7,29 +7,29 @@ import (
 	"net/http"
 	"strings"
 	"termo_back_end/internal/entities"
-	"termo_back_end/internal/modules"
+	"termo_back_end/internal/modules/service"
 	"termo_back_end/internal/status_codes"
 	"termo_back_end/internal/util"
 )
 
-type module struct {
-	service Service
+type authModule struct {
+	service service.AuthService
 	path    string
 }
 
-func NewModule(service Service) modules.Module {
-	return module{
+func NewAuthModule(service service.AuthService) entities.Module {
+	return authModule{
 		service: service,
 		path:    "/",
 	}
 }
 
-func (m module) Path() string {
+func (m authModule) Path() string {
 	return m.path
 }
 
-func (m module) Setup(r *mux.Router) ([]modules.RouteDefinition, *mux.Router) {
-	defs := []modules.RouteDefinition{
+func (m authModule) Setup(r *mux.Router) ([]entities.RouteDefinition, *mux.Router) {
+	defs := []entities.RouteDefinition{
 		{
 			Path:        "/register",
 			Handler:     m.register,
@@ -53,7 +53,7 @@ func (m module) Setup(r *mux.Router) ([]modules.RouteDefinition, *mux.Router) {
 	return defs, api
 }
 
-func (m *module) sessionMiddleware(next http.Handler) http.Handler {
+func (m *authModule) sessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := r.Context()
 		authHeader := r.Header.Get("Authorization")
@@ -86,7 +86,7 @@ func (m *module) sessionMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (m *module) register(w http.ResponseWriter, r *http.Request) {
+func (m *authModule) register(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	if !util.ReadBody(w, r, &credentials) {
 		return
@@ -109,7 +109,7 @@ func (m *module) register(w http.ResponseWriter, r *http.Request) {
 	util.WriteResponseJSON(w, response)
 }
 
-func (m *module) login(w http.ResponseWriter, r *http.Request) {
+func (m *authModule) login(w http.ResponseWriter, r *http.Request) {
 	var credentials entities.UserCredentials
 	if !util.ReadBody(w, r, &credentials) {
 		return

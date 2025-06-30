@@ -1,31 +1,25 @@
-package module_user
+package module
 
 import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"termo_back_end/internal/entities"
-	"termo_back_end/internal/modules"
+	"termo_back_end/internal/modules/service"
+	"termo_back_end/internal/rules"
 	"termo_back_end/internal/util"
 )
 
-/*
-
-Endpoints:
- - /getData
- - /changeName
- - /changePassword
-
-*/
-
 type module struct {
-	service Service
-	path    string
+	service     service.UserService
+	gameService service.GameService
+	path        string
 }
 
-func NewModule(service Service) modules.Module {
+func NewUserModule(service service.UserService, gameService service.GameService) entities.Module {
 	return module{
-		service: service,
-		path:    "/user",
+		service:     service,
+		gameService: gameService,
+		path:        "/user",
 	}
 }
 
@@ -33,8 +27,8 @@ func (m module) Path() string {
 	return m.path
 }
 
-func (m module) Setup(r *mux.Router) ([]modules.RouteDefinition, *mux.Router) {
-	defs := []modules.RouteDefinition{
+func (m module) Setup(r *mux.Router) ([]entities.RouteDefinition, *mux.Router) {
+	defs := []entities.RouteDefinition{
 		{
 			Path:        "/getData",
 			Handler:     m.getData,
@@ -66,12 +60,18 @@ func (m module) getData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := entities.UserResponse{
-		ID:   user.ID,
-		Name: user.Name,
+	// Get active game
+	game, gameStatuses, err := m.gameService.GetUserActiveGame(r.Context(), user)
+	if err != nil {
+		util.WriteInternalError(w)
+		return
 	}
 
-	util.WriteResponseJSON(w, response)
+	util.WriteResponseJSON(w, user.ToResponse(
+		game,
+		gameStatuses,
+		rules.GetGameMaxAttempts(game.GetWordLength(), game.GetCount()),
+	))
 }
 
 func (m module) updateName(w http.ResponseWriter, r *http.Request) {

@@ -36,6 +36,10 @@ func (w WordMap) MaxWordSize() uint32 {
 	return w.maxSize
 }
 
+func (w WordMap) CleanWord(word string) string {
+	return RemoveDiacritics(RemoveWhitespace(strings.ToLower(strings.TrimSpace(word))))
+}
+
 // ChooseRandom chooses words randomly. Returned words are cleaned (without diacritics)
 //
 //   - If there are no words with the specified size, returns ErrInvalidSize
@@ -83,7 +87,7 @@ func WordMapFromList(words []string) WordMap {
 	for _, word := range words {
 		// Clean word and store in the clean-to-orig map
 		word = strings.ToLower(strings.TrimSpace(word))
-		cleaned := RemoveDiacritics(word)
+		cleaned := RemoveDiacritics(RemoveWhitespace(word))
 		if cleaned == "" {
 			continue
 		}
@@ -119,4 +123,14 @@ func RemoveDiacritics(text string) string {
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	result, _, _ := transform.String(t, text)
 	return result
+}
+
+// RemoveWhitespace removes all diacritics from a text
+func RemoveWhitespace(text string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}, text)
 }

@@ -1,4 +1,4 @@
-package module_user
+package repo
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"termo_back_end/internal/entities"
 )
 
-type Repository interface {
+type UserRepository interface {
 	// RegisterUser inserts a user into the database with given credentials; returns it if succeeded
 	//
 	// Password is expected to be already hashed; will be inserted as is
@@ -30,19 +30,22 @@ type Repository interface {
 	//
 	// Password is expected to be already hashed; will be inserted as is
 	UpdatePassword(ctx context.Context, userID int64, password string) error
+
+	// IncrementScore increments a user's score, given their ID
+	IncrementScore(ctx context.Context, userID int64) error
 }
 
-type repo struct {
+type userRepo struct {
 	db *sql.DB
 }
 
-func NewRepo(db *sql.DB) Repository {
-	return repo{
+func NewUserRepo(db *sql.DB) UserRepository {
+	return userRepo{
 		db: db,
 	}
 }
 
-func (r repo) RegisterUser(
+func (r userRepo) RegisterUser(
 	ctx context.Context,
 	credentials entities.UserCredentials,
 ) (*entities.User, error) {
@@ -67,7 +70,7 @@ func (r repo) RegisterUser(
 	return r.GetUserByID(ctx, id)
 }
 
-func (r repo) GetUserByID(ctx context.Context, id int64) (*entities.User, error) {
+func (r userRepo) GetUserByID(ctx context.Context, id int64) (*entities.User, error) {
 	query := `
 	SELECT id,
 	       name,
@@ -93,7 +96,7 @@ func (r repo) GetUserByID(ctx context.Context, id int64) (*entities.User, error)
 	return &user, nil
 }
 
-func (r repo) GetUserByName(ctx context.Context, name string) (*entities.User, error) {
+func (r userRepo) GetUserByName(ctx context.Context, name string) (*entities.User, error) {
 	query := `
 	SELECT id,
 	       name,
@@ -119,7 +122,7 @@ func (r repo) GetUserByName(ctx context.Context, name string) (*entities.User, e
 	return &user, nil
 }
 
-func (r repo) UpdateName(ctx context.Context, userID int64, name string) error {
+func (r userRepo) UpdateName(ctx context.Context, userID int64, name string) error {
 	query := `
 	UPDATE user
 	SET name = ?
@@ -134,7 +137,7 @@ func (r repo) UpdateName(ctx context.Context, userID int64, name string) error {
 	return nil
 }
 
-func (r repo) UpdatePassword(ctx context.Context, userID int64, password string) error {
+func (r userRepo) UpdatePassword(ctx context.Context, userID int64, password string) error {
 	query := `
 	UPDATE user
 	SET password = ?
@@ -142,6 +145,21 @@ func (r repo) UpdatePassword(ctx context.Context, userID int64, password string)
 	`
 
 	_, err := r.db.ExecContext(ctx, query, password, userID)
+	if err != nil {
+		return fmt.Errorf("[ExecContext] | %v", err)
+	}
+
+	return nil
+}
+
+func (r userRepo) IncrementScore(ctx context.Context, userID int64) error {
+	query := `
+	UPDATE user
+	SET score = score + 1
+	WHERE id = ?
+	`
+
+	_, err := r.db.ExecContext(ctx, query, userID)
 	if err != nil {
 		return fmt.Errorf("[ExecContext] | %v", err)
 	}

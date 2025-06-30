@@ -28,4 +28,21 @@ type UserResponse struct {
 
 	// Name is the user's name
 	Name string `json:"name"`
+
+	// Game is the user's active game data
+	Game *GameResponse `json:"game"`
+}
+
+func (u User) ToResponse(game *Game, gameStatuses []GameStatus, maxGameTries uint32) UserResponse {
+	var gameResponse *GameResponse
+	if game != nil {
+		response := game.ToResponse(gameStatuses, maxGameTries)
+		gameResponse = &response
+	}
+
+	return UserResponse{
+		ID:   u.ID,
+		Name: u.Name,
+		Game: gameResponse,
+	}
 }

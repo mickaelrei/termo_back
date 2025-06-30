@@ -7,31 +7,30 @@ import (
 	"log"
 	"net/http"
 	"termo_back_end/internal/entities"
-	"termo_back_end/internal/modules"
-	"termo_back_end/internal/modules/module_auth"
-	"termo_back_end/internal/modules/module_game"
-	"termo_back_end/internal/modules/module_user"
+	"termo_back_end/internal/modules/module"
+	"termo_back_end/internal/modules/repo"
+	"termo_back_end/internal/modules/service"
 	"time"
 )
 
 func Setup(config entities.Config, words []string, db *sql.DB) *mux.Router {
 	r := mux.NewRouter()
 
-	// User module
-	userRepo := module_user.NewRepo(db)
-	userService := module_user.NewService(userRepo)
-	userModule := module_user.NewModule(userService)
+	// Repositories
+	userRepo := repo.NewUserRepo(db)
+	gameRepo := repo.NewGameRepo(db)
 
-	// Game module
-	gameRepo := module_game.NewRepo(db)
-	gameService := module_game.NewService(words, gameRepo)
-	gameModule := module_game.NewModule(gameService)
+	// Services
+	userService := service.NewUserService(userRepo)
+	gameService := service.NewGameService(words, gameRepo, userRepo)
+	authService := service.NewAuthService(config, userRepo)
 
-	// Auth module
-	authService := module_auth.NewService(config, userRepo)
-	authModule := module_auth.NewModule(authService)
+	// Modules
+	userModule := module.NewUserModule(userService, gameService)
+	gameModule := module.NewGameModule(gameService)
+	authModule := module.NewAuthModule(authService)
 
-	apiModules := []modules.Module{
+	apiModules := []entities.Module{
 		gameModule,
 		userModule,
 	}

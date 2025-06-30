@@ -1,4 +1,4 @@
-package modules
+package entities
 
 import (
 	"github.com/gorilla/mux"
@@ -7,7 +7,7 @@ import (
 
 // Module is an interface that represents a set of routes within the application with related logic
 //
-// It is designed to have a base route path and set all subroutes' handlers
+// It is designed to have a base route path and set all subroutes's handlers
 type Module interface {
 	// Path returns the module base path
 	Path() string
