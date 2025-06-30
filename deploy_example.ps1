@@ -39,8 +39,9 @@ if (!(Test-Path "$BuildPath\$BinaryName")) {
     exit 1
 }
 
-# Copy config.json into the build path
+# Copy necessary files into the build path
 Copy-Item "config.json" "$BuildPath\" -Force
+Copy-Item "words.txt" "$BuildPath\" -Force
 
 # Upload folder to remote server
 Write-Color "📤  Uploading backend folder to remote server..." Yellow

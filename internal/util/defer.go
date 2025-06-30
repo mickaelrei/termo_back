@@ -17,7 +17,7 @@ import (
 func DeferRowsClose(rows *sql.Rows) {
 	err := rows.Close()
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		log.Printf("error in [rows.Close]: %v", err)
+		log.Printf("[rows.Close] | %v", err)
 	}
 }
 
@@ -31,7 +31,7 @@ func DeferRowsClose(rows *sql.Rows) {
 func DeferFileClose(file *os.File) {
 	err := file.Close()
 	if err != nil && !errors.Is(err, os.ErrClosed) {
-		log.Printf("error in [file.Close]: %v", err)
+		log.Printf("[file.Close] | %v", err)
 	}
 }
 
@@ -45,6 +45,6 @@ func DeferFileClose(file *os.File) {
 func DeferTxRollback(tx *sql.Tx) {
 	err := tx.Rollback()
 	if err != nil && !errors.Is(err, sql.ErrTxDone) {
-		log.Printf("error in [tx.Rollback]: %v", err)
+		log.Printf("[tx.Rollback] | %v", err)
 	}
 }

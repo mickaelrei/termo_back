@@ -6,30 +6,30 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"termo_back_end/internal/entities"
 	"termo_back_end/internal/modules"
-	"termo_back_end/internal/modules/auth"
-	"termo_back_end/internal/modules/game"
-	"termo_back_end/internal/modules/user"
+	"termo_back_end/internal/modules/module_auth"
+	"termo_back_end/internal/modules/module_game"
+	"termo_back_end/internal/modules/module_user"
 	"time"
 )
 
-func SetupRouter(db *sql.DB) *mux.Router {
+func Setup(config entities.Config, words []string, db *sql.DB) *mux.Router {
 	r := mux.NewRouter()
 
-	// Auth module
-	authRepo := auth.NewRepo(db)
-	authService := auth.NewService(authRepo)
-	authModule := auth.NewModule(authService)
-
 	// User module
-	userRepo := user.NewRepo(db)
-	userService := user.NewService(userRepo)
-	userModule := user.NewModule(userService)
+	userRepo := module_user.NewRepo(db)
+	userService := module_user.NewService(userRepo)
+	userModule := module_user.NewModule(userService)
 
 	// Game module
-	gameRepo := game.NewRepo(db)
-	gameService := game.NewService(gameRepo)
-	gameModule := game.NewModule(gameService)
+	gameRepo := module_game.NewRepo(db)
+	gameService := module_game.NewService(words, gameRepo)
+	gameModule := module_game.NewModule(gameService)
+
+	// Auth module
+	authService := module_auth.NewService(config, userRepo)
+	authModule := module_auth.NewModule(authService)
 
 	apiModules := []modules.Module{
 		gameModule,

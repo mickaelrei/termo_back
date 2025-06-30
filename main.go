@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,29 @@ import (
 
 const ServerPort = 8080
 
+func loadWordListFile() ([]string, error) {
+	file, err := os.Open("words.txt")
+	if err != nil {
+		log.Fatalf("failed to load word list: %v", err)
+	}
+	defer util.DeferFileClose(file)
+
+	var words []string
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		words = append(words, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatalf("failed reading word list: %v", err)
+	}
+
+	log.Printf("loaded %d words", len(words))
+
+	return words, nil
+}
+
 func openDB(config entities.Config) (*sql.DB, error) {
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s",
@@ -33,13 +57,13 @@ func openDB(config entities.Config) (*sql.DB, error) {
 	// Open database
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("error in [sql.Open]: %v\n", err)
+		return nil, fmt.Errorf("[sql.Open] | %v", err)
 	}
 
 	// Test the connection
 	err = db.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("error in [db.Ping]: %v", err)
+		return nil, fmt.Errorf("[db.Ping] | %v", err)
 	}
 
 	return db, nil
@@ -48,18 +72,18 @@ func openDB(config entities.Config) (*sql.DB, error) {
 func readConfig() (*entities.Config, error) {
 	file, err := os.Open("config.json")
 	if err != nil {
-		return nil, fmt.Errorf("error in [os.Open]: %v", err)
+		return nil, fmt.Errorf("[os.Open] | %v", err)
 	}
 	defer util.DeferFileClose(file)
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {
-		return nil, fmt.Errorf("error in [io.ReadAll]: %v", err)
+		return nil, fmt.Errorf("[io.ReadAll] | %v", err)
 	}
 
 	var config entities.Config
 	if err := json.Unmarshal(bytes, &config); err != nil {
-		return nil, fmt.Errorf("error in [json.Unmarshal]: %v", err)
+		return nil, fmt.Errorf("[json.Unmarshal] | %v", err)
 	}
 
 	return &config, nil
@@ -90,22 +114,35 @@ func createServer(router *mux.Router) *http.Server {
 }
 
 func main() {
+	// Load the words-list file
+	words, err := loadWordListFile()
+	if err != nil {
+		log.Fatalf("[loadWordListFile] | %v", err)
+		return
+	}
+
+	// Ensure the list is not empty
+	if len(words) == 0 {
+		log.Fatalf("word list is empty")
+		return
+	}
+
 	// Load config file
 	config, err := readConfig()
 	if err != nil {
-		log.Fatalf("error in [readConfig]: %v\n", err)
+		log.Fatalf("[readConfig] | %v", err)
 		return
 	}
 
 	// Open database
 	db, err := openDB(*config)
 	if err != nil {
-		log.Fatalf("error in [openDB]: %v\n", err)
+		log.Fatalf("[openDB] | %v", err)
 		return
 	}
 
 	// Set up all route handlers
-	r := router.SetupRouter(db)
+	r := router.Setup(*config, words, db)
 
 	// Create server
 	server := createServer(r)
@@ -114,6 +151,6 @@ func main() {
 	log.Printf("Starting server on address: %s", server.Addr)
 	err = server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Printf("Error: %v", err)
+		log.Printf("[server.ListenAndServe] | %v", err)
 	}
 }

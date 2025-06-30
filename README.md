@@ -7,6 +7,26 @@ Backend for Termo web application
 The file `config_example.json` specifies the template for the necessary configurations for running the server.
 Create a copy of this file named `config.json` with your configurations to be read when the server is executed.
 
+The project uses PASETO authentication. The key pair, stored in the `auth.private_key` and `auth.public_key` fields can
+be generated in the following way:
+
+```go
+package main
+
+import (
+	"fmt"
+	"aidanwoods.dev/go-paseto"
+)
+
+func main() {
+	privateKey := paseto.NewV4AsymmetricSecretKey()
+	publicKey := privateKey.Public()
+
+	fmt.Println("Private:", privateKey.ExportHex())
+	fmt.Println("Public:", publicKey.ExportHex())
+}
+```
+
 ## Deploy
 
 The script `deploy_example.ps1` is a PowerShell script containing a template for building and deploying the server on
