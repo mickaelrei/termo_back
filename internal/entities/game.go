@@ -1,18 +1,18 @@
 package entities
 
-type GameLetterStatus int8
-type GameWordStatus []GameLetterStatus
-type GameStatus []GameWordStatus
+type GameLetterState int8
+type GameWordState []GameLetterState
+type GameState []GameWordState
 
 const (
-	// GameLetterStatusCorrect is returned when a letter is in the correct position
-	GameLetterStatusCorrect GameLetterStatus = iota
+	// GameLetterStateCorrect is returned when a letter is in the correct position
+	GameLetterStateCorrect GameLetterState = iota
 
-	// GameLetterStatusWrongPosition is returned when a letter is in the wrong position
-	GameLetterStatusWrongPosition
+	// GameLetterStateWrongPosition is returned when a letter is in the wrong position
+	GameLetterStateWrongPosition
 
-	// GameLetterStatusBlack is returned when a letter is not in the word
-	GameLetterStatusBlack
+	// GameLetterStateWrong is returned when a letter is not in the word
+	GameLetterStateWrong
 )
 
 // Game maps data from games in the database
@@ -32,14 +32,14 @@ type Game struct {
 
 // GameResponse is used in endpoints to send the minimum required public data
 type GameResponse struct {
-	WordLength   uint32       `json:"word_length"`
-	GameCount    uint32       `json:"game_count"`
-	MaxTries     uint32       `json:"max_tries"`
-	Attempts     []string     `json:"attempts"`
-	GameStatuses []GameStatus `json:"game_statuses"`
+	WordLength   uint32      `json:"word_length"`
+	GameCount    uint32      `json:"game_count"`
+	MaxTries     uint32      `json:"max_tries"`
+	Attempts     []string    `json:"attempts"`
+	GameStatuses []GameState `json:"game_statuses"`
 }
 
-func (g Game) ToResponse(statuses []GameStatus, maxTries uint32) GameResponse {
+func (g Game) ToResponse(statuses []GameState, maxTries uint32) GameResponse {
 	return GameResponse{
 		WordLength:   g.GetWordLength(),
 		GameCount:    g.GetCount(),

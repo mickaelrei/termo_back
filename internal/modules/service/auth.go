@@ -81,7 +81,7 @@ func (s authService) RegisterUser(
 	}
 
 	if user != nil {
-		return status_codes.UserRegisterInvalidAlreadyRegistered, "", nil
+		return status_codes.UserRegisterAlreadyRegistered, "", nil
 	}
 
 	// Hash the password

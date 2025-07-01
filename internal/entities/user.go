@@ -15,10 +15,10 @@ type User struct {
 // UserCredentials stores data for an attempt at user registration/login
 type UserCredentials struct {
 	// Name is the user's name
-	Name string
+	Name string `json:"name"`
 
 	// Password is the user's password attempt
-	Password string
+	Password string `json:"password"`
 }
 
 // UserResponse is used in endpoints to send the minimum required public data
@@ -33,7 +33,7 @@ type UserResponse struct {
 	Game *GameResponse `json:"game"`
 }
 
-func (u User) ToResponse(game *Game, gameStatuses []GameStatus, maxGameTries uint32) UserResponse {
+func (u User) ToResponse(game *Game, gameStatuses []GameState, maxGameTries uint32) UserResponse {
 	var gameResponse *GameResponse
 	if game != nil {
 		response := game.ToResponse(gameStatuses, maxGameTries)

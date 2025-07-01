@@ -13,16 +13,16 @@ func GetGameMaxAttempts(wordLength uint32, gameCount uint32) uint32 {
 	return gameCount + 5
 }
 
-// CheckGameAttempt checks a word attempt at a game. Returns a GameWordStatus for each game word, containing the
-// GameLetterStatus for each letter in the word.
+// CheckGameAttempt checks a word attempt at a game. Returns a GameWordState for each game word, containing the
+// GameLetterState for each letter in the word.
 //
 // Note: The input attempt and the game words are expected to have the same length and to be trimmed, lowercased and
 // cleaned (no diacritics)
-func CheckGameAttempt(game entities.Game, attempt string) []entities.GameWordStatus {
-	gameStatus := make([]entities.GameWordStatus, len(game.Words))
+func CheckGameAttempt(game entities.Game, attempt string) []entities.GameWordState {
+	gameStatus := make([]entities.GameWordState, len(game.Words))
 
 	for j, word := range game.Words {
-		wordStatus := make([]entities.GameLetterStatus, len(attempt))
+		wordStatus := make([]entities.GameLetterState, len(attempt))
 
 		wordCopy := make([]byte, len(word))
 		attemptCopy := make([]byte, len(word))
@@ -32,7 +32,7 @@ func CheckGameAttempt(game entities.Game, attempt string) []entities.GameWordSta
 		// First, mark the letters in the correct position
 		for i := range attempt {
 			if attempt[i] == word[i] {
-				wordStatus[i] = entities.GameLetterStatusCorrect
+				wordStatus[i] = entities.GameLetterStateCorrect
 				wordCopy[i] = letterBlank
 				attemptCopy[i] = letterBlank
 			} else {
@@ -48,7 +48,7 @@ func CheckGameAttempt(game entities.Game, attempt string) []entities.GameWordSta
 
 			idx := index(wordCopy, attempt[i])
 			if idx != -1 {
-				wordStatus[i] = entities.GameLetterStatusWrongPosition
+				wordStatus[i] = entities.GameLetterStateWrongPosition
 				wordCopy[idx] = letterBlank
 			}
 		}
@@ -56,7 +56,7 @@ func CheckGameAttempt(game entities.Game, attempt string) []entities.GameWordSta
 		// Finally, mark incorrect letters as black
 		for i := range attempt {
 			if wordStatus[i] == -1 {
-				wordStatus[i] = entities.GameLetterStatusBlack
+				wordStatus[i] = entities.GameLetterStateWrong
 			}
 		}
 

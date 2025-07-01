@@ -9,7 +9,7 @@ const (
 	UserRegisterSuccess UserRegister = iota
 	UserRegisterInvalidName
 	UserRegisterInvalidPassword
-	UserRegisterInvalidAlreadyRegistered
+	UserRegisterAlreadyRegistered
 )
 
 const (
@@ -36,7 +36,7 @@ func (c UserRegister) String() string {
 		return "INVALID_NAME"
 	case UserRegisterInvalidPassword:
 		return "INVALID_PASSWORD"
-	case UserRegisterInvalidAlreadyRegistered:
+	case UserRegisterAlreadyRegistered:
 		return "ALREADY_REGISTERED"
 	default:
 		return "UNKNOWN"

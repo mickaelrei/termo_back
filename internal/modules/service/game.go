@@ -25,13 +25,13 @@ type GameService interface {
 		ctx context.Context,
 		user *entities.User,
 		attempt string,
-	) (status_codes.GameAttempt, []entities.GameWordStatus, error)
+	) (status_codes.GameAttempt, []entities.GameWordState, error)
 
 	// GetUserActiveGame attempts to find the provided user's active game; returns nil if no active game
 	GetUserActiveGame(
 		ctx context.Context,
 		user *entities.User,
-	) (*entities.Game, []entities.GameStatus, error)
+	) (*entities.Game, []entities.GameState, error)
 }
 
 type gameService struct {
@@ -98,7 +98,7 @@ func (s gameService) AttemptGame(
 	ctx context.Context,
 	user *entities.User,
 	attempt string,
-) (status_codes.GameAttempt, []entities.GameWordStatus, error) {
+) (status_codes.GameAttempt, []entities.GameWordState, error) {
 	// Clean attempt
 	attempt = s.wordMap.CleanWord(attempt)
 
@@ -147,7 +147,7 @@ func (s gameService) AttemptGame(
 func (s gameService) GetUserActiveGame(
 	ctx context.Context,
 	user *entities.User,
-) (*entities.Game, []entities.GameStatus, error) {
+) (*entities.Game, []entities.GameState, error) {
 	// Get game
 	game, err := s.repo.GetUserActiveGame(ctx, user.ID)
 	if err != nil {
@@ -159,7 +159,7 @@ func (s gameService) GetUserActiveGame(
 	}
 
 	// Get status for each attempt
-	statuses := make([]entities.GameStatus, len(game.Attempts))
+	statuses := make([]entities.GameState, len(game.Attempts))
 	for i, attempt := range game.Attempts {
 		statuses[i] = rules.CheckGameAttempt(*game, attempt)
 	}

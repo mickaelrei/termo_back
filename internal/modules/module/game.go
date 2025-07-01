@@ -87,14 +87,13 @@ func (m gameModule) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var maxTries *uint32
+	var maxTries uint32
 	if status == status_codes.GameStartSuccess {
-		tries := rules.GetGameMaxAttempts(body.WordLength, body.GameCount)
-		maxTries = &tries
+		maxTries = rules.GetGameMaxAttempts(body.WordLength, body.GameCount)
 	}
 	response := struct {
 		util.DefaultEndpointResponse[status_codes.GameStart]
-		MaxTries *uint32 `json:"max_tries,omitempty"`
+		MaxTries uint32 `json:"max_tries,omitempty"`
 	}{
 		DefaultEndpointResponse: util.BuildDefaultEndpointStatusResponse(status),
 		MaxTries:                maxTries,
@@ -126,7 +125,7 @@ func (m gameModule) attempt(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		util.DefaultEndpointResponse[status_codes.GameAttempt]
-		GameStatus []entities.GameWordStatus `json:"game_status,omitempty"`
+		GameStatus []entities.GameWordState `json:"game_state,omitempty"`
 	}{
 		DefaultEndpointResponse: util.BuildDefaultEndpointStatusResponse(status),
 		GameStatus:              gameStatus,
