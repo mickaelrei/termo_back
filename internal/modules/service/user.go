@@ -24,6 +24,7 @@ type UserService interface {
 	UpdatePassword(
 		ctx context.Context,
 		user *entities.User,
+		currentPassword string,
 		newPassword string,
 	) (status_codes.UserUpdatePassword, error)
 }
@@ -61,14 +62,19 @@ func (s userService) UpdateName(
 func (s userService) UpdatePassword(
 	ctx context.Context,
 	user *entities.User,
+	currentPassword string,
 	newPassword string,
 ) (status_codes.UserUpdatePassword, error) {
-	// Validate password
+	// Check if the current password matches the db one
+	if !util.CheckPasswordHash(currentPassword, user.Password) {
+		return status_codes.UserUpdatePasswordWrongCurrent, nil
+	}
+
+	// Validate the new password
 	if !rules.IsValidUserPassword(newPassword) {
 		return status_codes.UserUpdatePasswordInvalid, nil
 	}
 
-	// Hash the password
 	newPassword, err := util.HashPassword(newPassword)
 	if err != nil {
 		return -1, fmt.Errorf("[HashPassword] | %v", err)

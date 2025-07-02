@@ -74,29 +74,29 @@ func (m gameModule) start(w http.ResponseWriter, r *http.Request) {
 
 	var body struct {
 		WordLength uint32 `json:"word_length"`
-		GameCount  uint32 `json:"game_count"`
+		WordCount  uint32 `json:"word_count"`
 	}
 	if !util.ReadBody(w, r, &body) {
 		return
 	}
 
-	status, err := m.service.StartGame(r.Context(), user, body.WordLength, body.GameCount)
+	status, err := m.service.StartGame(r.Context(), user, body.WordLength, body.WordCount)
 	if err != nil {
 		log.Printf("[StartGame] | %v", err)
 		util.WriteInternalError(w)
 		return
 	}
 
-	var maxTries uint32
+	var maxAttempts uint32
 	if status == status_codes.GameStartSuccess {
-		maxTries = rules.GetGameMaxAttempts(body.WordLength, body.GameCount)
+		maxAttempts = rules.GetGameMaxAttempts(body.WordLength, body.WordCount)
 	}
 	response := struct {
 		util.DefaultEndpointResponse[status_codes.GameStart]
-		MaxTries uint32 `json:"max_tries,omitempty"`
+		MaxAttempts uint32 `json:"max_attempts,omitempty"`
 	}{
 		DefaultEndpointResponse: util.BuildDefaultEndpointStatusResponse(status),
-		MaxTries:                maxTries,
+		MaxAttempts:             maxAttempts,
 	}
 
 	util.WriteResponseJSON(w, response)
@@ -150,6 +150,6 @@ func (m gameModule) getActive(w http.ResponseWriter, r *http.Request) {
 
 	util.WriteResponseJSON(
 		w,
-		game.ToResponse(gameStatuses, rules.GetGameMaxAttempts(game.GetWordLength(), game.GetCount())),
+		game.ToResponse(gameStatuses, rules.GetGameMaxAttempts(game.GetWordLength(), game.GetWordCount())),
 	)
 }

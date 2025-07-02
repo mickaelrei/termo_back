@@ -74,7 +74,8 @@ func (r userRepo) GetUserByID(ctx context.Context, id int64) (*entities.User, er
 	query := `
 	SELECT id,
 	       name,
-	       password
+	       password,
+	       score
 	FROM user
 	WHERE id = ?
 	`
@@ -84,6 +85,7 @@ func (r userRepo) GetUserByID(ctx context.Context, id int64) (*entities.User, er
 		&user.ID,
 		&user.Name,
 		&user.Password,
+		&user.Score,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -100,7 +102,8 @@ func (r userRepo) GetUserByName(ctx context.Context, name string) (*entities.Use
 	query := `
 	SELECT id,
 	       name,
-	       password
+	       password,
+	       score
 	FROM user
 	WHERE name = ?
 	`
@@ -110,6 +113,7 @@ func (r userRepo) GetUserByName(ctx context.Context, name string) (*entities.Use
 		&user.ID,
 		&user.Name,
 		&user.Password,
+		&user.Score,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

@@ -67,10 +67,15 @@ func (m module) getData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var maxAttempts *uint32
+	if game != nil {
+		_max := rules.GetGameMaxAttempts(game.GetWordLength(), game.GetWordCount())
+		maxAttempts = &_max
+	}
 	util.WriteResponseJSON(w, user.ToResponse(
 		game,
 		gameStatuses,
-		rules.GetGameMaxAttempts(game.GetWordLength(), game.GetCount()),
+		maxAttempts,
 	))
 }
 
@@ -105,13 +110,14 @@ func (m module) updatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		NewPassword string `json:"new_password"`
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
 	}
 	if !util.ReadBody(w, r, &body) {
 		return
 	}
 
-	status, err := m.service.UpdatePassword(r.Context(), user, body.NewPassword)
+	status, err := m.service.UpdatePassword(r.Context(), user, body.CurrentPassword, body.NewPassword)
 	if err != nil {
 		util.WriteInternalError(w)
 		return

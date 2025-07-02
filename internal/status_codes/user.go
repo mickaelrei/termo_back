@@ -25,6 +25,7 @@ const (
 
 const (
 	UserUpdatePasswordSuccess UserUpdatePassword = iota
+	UserUpdatePasswordWrongCurrent
 	UserUpdatePasswordInvalid
 )
 
@@ -71,6 +72,8 @@ func (c UserUpdatePassword) String() string {
 	switch c {
 	case UserUpdatePasswordSuccess:
 		return "SUCCESS"
+	case UserUpdatePasswordWrongCurrent:
+		return "WRONG_CURRENT"
 	case UserUpdatePasswordInvalid:
 		return "INVALID"
 	default:

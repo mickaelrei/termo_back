@@ -17,7 +17,7 @@ type GameService interface {
 		ctx context.Context,
 		user *entities.User,
 		wordLength uint32,
-		gameCount uint32,
+		wordCount uint32,
 	) (status_codes.GameStart, error)
 
 	// AttemptGame attempts to register an attempt on the current game of the provided user
@@ -52,7 +52,7 @@ func (s gameService) StartGame(
 	ctx context.Context,
 	user *entities.User,
 	wordLength uint32,
-	gameCount uint32,
+	wordCount uint32,
 ) (status_codes.GameStart, error) {
 	// Check if the user is already in a game
 	game, err := s.repo.GetUserActiveGame(ctx, user.ID)
@@ -69,12 +69,12 @@ func (s gameService) StartGame(
 	if wordLength < 3 || wordLength > 22 {
 		return status_codes.GameStartInvalidWordLength, nil
 	}
-	if gameCount == 0 || gameCount > 20 {
+	if wordCount == 0 || wordCount > 20 {
 		return status_codes.GameStartInvalidCount, nil
 	}
 
 	// Choose words randomly
-	words, err := s.wordMap.ChooseRandom(wordLength, gameCount)
+	words, err := s.wordMap.ChooseRandom(wordLength, wordCount)
 	if err != nil {
 		if errors.Is(err, util.ErrInvalidSize) {
 			return status_codes.GameStartInvalidWordLength, nil
@@ -120,7 +120,7 @@ func (s gameService) AttemptGame(
 	// Check what's right and what's wrong
 	gameStatus := rules.CheckGameAttempt(*game, attempt)
 	currentAttempts := uint32(len(game.Attempts))
-	maxAttempts := rules.GetGameMaxAttempts(game.GetWordLength(), game.GetCount())
+	maxAttempts := rules.GetGameMaxAttempts(game.GetWordLength(), game.GetWordCount())
 
 	// Register attempt in database
 	err = s.repo.RegisterAttempt(ctx, game.ID, attempt, currentAttempts, currentAttempts >= maxAttempts-1)

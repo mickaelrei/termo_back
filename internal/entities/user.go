@@ -10,6 +10,9 @@ type User struct {
 
 	// Password is the user's hashed password
 	Password string
+
+	// Score tells how many games the user has won
+	Score uint32
 }
 
 // UserCredentials stores data for an attempt at user registration/login
@@ -29,20 +32,24 @@ type UserResponse struct {
 	// Name is the user's name
 	Name string `json:"name"`
 
-	// Game is the user's active game data
-	Game *GameResponse `json:"game"`
+	// Score tells how many games the user has won
+	Score uint32 `json:"score"`
+
+	// ActiveGame is the user's active game data
+	ActiveGame *GameResponse `json:"active_game"`
 }
 
-func (u User) ToResponse(game *Game, gameStatuses []GameState, maxGameTries uint32) UserResponse {
+func (u User) ToResponse(game *Game, gameStatuses []GameState, maxGameAttempts *uint32) UserResponse {
 	var gameResponse *GameResponse
-	if game != nil {
-		response := game.ToResponse(gameStatuses, maxGameTries)
+	if game != nil && maxGameAttempts != nil {
+		response := game.ToResponse(gameStatuses, *maxGameAttempts)
 		gameResponse = &response
 	}
 
 	return UserResponse{
-		ID:   u.ID,
-		Name: u.Name,
-		Game: gameResponse,
+		ID:         u.ID,
+		Name:       u.Name,
+		Score:      u.Score,
+		ActiveGame: gameResponse,
 	}
 }

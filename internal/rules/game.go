@@ -8,9 +8,9 @@ import (
 const letterBlank = byte('\n')
 
 // GetGameMaxAttempts returns the maximum number of attempts a user can make for a given word length and game count
-func GetGameMaxAttempts(wordLength uint32, gameCount uint32) uint32 {
+func GetGameMaxAttempts(wordLength uint32, wordCount uint32) uint32 {
 	// TODO: Incorporate wordLength into the calculation
-	return gameCount + 5
+	return wordCount + 5
 }
 
 // CheckGameAttempt checks a word attempt at a game. Returns a GameWordState for each game word, containing the
