@@ -5,11 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"termo_back_end/internal/entities"
-	repo "termo_back_end/internal/modules/repo"
+	"termo_back_end/internal/modules/repo"
 	"termo_back_end/internal/rules"
 	"termo_back_end/internal/status_codes"
 	"termo_back_end/internal/util"
 )
+
+type GameAttemptData struct {
+	Status    status_codes.GameAttempt
+	GameState []entities.GameWordState
+	Words     []string
+	Won       bool
+}
 
 type GameService interface {
 	// StartGame attempts to start a game for the provided user with the given configs
@@ -25,7 +32,7 @@ type GameService interface {
 		ctx context.Context,
 		user *entities.User,
 		attempt string,
-	) (status_codes.GameAttempt, []entities.GameWordState, error)
+	) (*GameAttemptData, error)
 
 	// GetUserActiveGame attempts to find the provided user's active game; returns nil if no active game
 	GetUserActiveGame(
@@ -98,50 +105,74 @@ func (s gameService) AttemptGame(
 	ctx context.Context,
 	user *entities.User,
 	attempt string,
-) (status_codes.GameAttempt, []entities.GameWordState, error) {
+) (*GameAttemptData, error) {
 	// Clean attempt
 	attempt = s.wordMap.CleanWord(attempt)
 
 	// Ensure the user is already in a game
 	game, err := s.repo.GetUserActiveGame(ctx, user.ID)
 	if err != nil {
-		return -1, nil, fmt.Errorf("[GetUserActiveGame] | %v", err)
+		return nil, fmt.Errorf("[GetUserActiveGame] | %v", err)
 	}
 
 	if game == nil {
-		return status_codes.GameAttemptNoActiveGame, nil, nil
+		return &GameAttemptData{
+			Status: status_codes.GameAttemptNoActiveGame,
+		}, nil
 	}
 
 	// Ensure the attempt is valid
 	if uint32(len(attempt)) != game.GetWordLength() {
-		return status_codes.GameAttemptInvalid, nil, nil
+		return &GameAttemptData{
+			Status: status_codes.GameAttemptInvalid,
+		}, nil
 	}
 
 	// Check what's right and what's wrong
-	gameStatus := rules.CheckGameAttempt(*game, attempt)
+	gameState := rules.CheckGameAttempt(*game, attempt)
 	currentAttempts := uint32(len(game.Attempts))
 	maxAttempts := rules.GetGameMaxAttempts(game.GetWordLength(), game.GetWordCount())
 
 	// Register attempt in database
 	err = s.repo.RegisterAttempt(ctx, game.ID, attempt, currentAttempts, currentAttempts >= maxAttempts-1)
 	if err != nil {
-		return -1, nil, fmt.Errorf("[RegisterAttempt] | %v", err)
+		return nil, fmt.Errorf("[RegisterAttempt] | %v", err)
 	}
 
 	// If all words are correct, increment the user's score
-	if rules.IsGameWon(*game, attempt) {
+	won := rules.IsGameWon(*game, attempt)
+	if won {
 		err = s.userRepo.IncrementScore(ctx, user.ID)
 		if err != nil {
-			return -1, nil, fmt.Errorf("[IncrementScore] | %v", err)
+			return nil, fmt.Errorf("[IncrementScore] | %v", err)
 		}
 
 		err = s.repo.FinishGame(ctx, game.ID)
 		if err != nil {
-			return -1, nil, fmt.Errorf("[FinishGame] | %v", err)
+			return nil, fmt.Errorf("[FinishGame] | %v", err)
 		}
 	}
 
-	return status_codes.GameAttemptSuccess, gameStatus, nil
+	var words []string
+	if currentAttempts >= maxAttempts-1 || won {
+		// Player either won or lost; show actual words
+		for _, word := range game.Words {
+			original, ok := s.wordMap.GetOriginalWord(word)
+
+			if ok {
+				words = append(words, original)
+			} else {
+				words = append(words, word)
+			}
+		}
+	}
+
+	return &GameAttemptData{
+		Status:    status_codes.GameAttemptSuccess,
+		GameState: gameState,
+		Words:     words,
+		Won:       won,
+	}, nil
 }
 
 func (s gameService) GetUserActiveGame(

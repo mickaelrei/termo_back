@@ -32,20 +32,20 @@ type Game struct {
 
 // GameResponse is used in endpoints to send the minimum required public data
 type GameResponse struct {
-	WordLength   uint32      `json:"word_length"`
-	WordCount    uint32      `json:"word_count"`
-	MaxAttempts  uint32      `json:"max_attempts"`
-	Attempts     []string    `json:"attempts"`
-	GameStatuses []GameState `json:"game_statuses"`
+	WordLength  uint32      `json:"word_length"`
+	WordCount   uint32      `json:"word_count"`
+	MaxAttempts uint32      `json:"max_attempts"`
+	Attempts    []string    `json:"attempts"`
+	GameStates  []GameState `json:"game_states"`
 }
 
-func (g Game) ToResponse(statuses []GameState, maxAttempts uint32) GameResponse {
+func (g Game) ToResponse(states []GameState, maxAttempts uint32) GameResponse {
 	return GameResponse{
-		WordLength:   g.GetWordLength(),
-		WordCount:    g.GetWordCount(),
-		MaxAttempts:  maxAttempts,
-		Attempts:     g.Attempts,
-		GameStatuses: statuses,
+		WordLength:  g.GetWordLength(),
+		WordCount:   g.GetWordCount(),
+		MaxAttempts: maxAttempts,
+		Attempts:    g.Attempts,
+		GameStates:  states,
 	}
 }
 

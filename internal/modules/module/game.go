@@ -116,7 +116,7 @@ func (m gameModule) attempt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, gameStatus, err := m.service.AttemptGame(r.Context(), user, body.Attempt)
+	data, err := m.service.AttemptGame(r.Context(), user, body.Attempt)
 	if err != nil {
 		log.Printf("[AttemptGame] | %v", err)
 		util.WriteInternalError(w)
@@ -125,10 +125,14 @@ func (m gameModule) attempt(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		util.DefaultEndpointResponse[status_codes.GameAttempt]
-		GameStatus []entities.GameWordState `json:"game_state,omitempty"`
+		GameState []entities.GameWordState `json:"game_state,omitempty"`
+		Words     []string                 `json:"words,omitempty"`
+		Won       bool                     `json:"won"`
 	}{
-		DefaultEndpointResponse: util.BuildDefaultEndpointStatusResponse(status),
-		GameStatus:              gameStatus,
+		DefaultEndpointResponse: util.BuildDefaultEndpointStatusResponse(data.Status),
+		GameState:               data.GameState,
+		Words:                   data.Words,
+		Won:                     data.Won,
 	}
 
 	util.WriteResponseJSON(w, response)
